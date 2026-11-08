@@ -7,7 +7,7 @@ require_once __DIR__ . "/auth.php";
 
 try {
     $stmt = $pdo->prepare(
-        "SELECT user_id, name, email, role, status
+        "SELECT user_id, name, email, profile_picture, role, status
          FROM users
          WHERE user_id = :user_id
          LIMIT 1"

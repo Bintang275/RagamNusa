@@ -5,131 +5,111 @@ header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/auth.php";
 
-// Hanya menerima metode POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
 
     echo json_encode([
         "success" => false,
-        "message" => "Gunakan metode POST."
+        "message" => "Metode request tidak diizinkan."
     ]);
-
     exit;
 }
 
-// memastikan file gambar dikirim
 if (!isset($_FILES["profile_picture"])) {
     http_response_code(400);
 
     echo json_encode([
         "success" => false,
-        "message" => "Foto profil belum dikirim."
+        "message" => "Foto profil belum dipilih."
     ]);
-
     exit;
 }
 
-// mengambil informasi file
 $file = $_FILES["profile_picture"];
 
-// memeriksa error upload
 if ($file["error"] !== UPLOAD_ERR_OK) {
     http_response_code(400);
 
     echo json_encode([
         "success" => false,
-        "message" => "Upload foto gagal."
+        "message" => "Gagal mengunggah foto profil."
     ]);
-
     exit;
 }
 
-// membatasi ukuran maksimal 2 MB
 $maxSize = 2 * 1024 * 1024;
 
 if ($file["size"] > $maxSize) {
-    http_response_code(413);
+    http_response_code(400);
 
     echo json_encode([
         "success" => false,
         "message" => "Ukuran foto maksimal 2 MB."
     ]);
-
     exit;
 }
 
-// memastikan file benar-benar gambar
 if (!is_uploaded_file($file["tmp_name"])) {
     http_response_code(400);
 
     echo json_encode([
         "success" => false,
-        "message" => "File upload tidak valid."
+        "message" => "File unggahan tidak valid."
     ]);
-
     exit;
 }
 
-// memeriksa tipe gambar berdasarkan isi file
 $imageInfo = getimagesize($file["tmp_name"]);
+
+if ($imageInfo === false) {
+    http_response_code(400);
+
+    echo json_encode([
+        "success" => false,
+        "message" => "File harus berupa gambar yang valid."
+    ]);
+    exit;
+}
 
 $allowedTypes = [
     IMAGETYPE_JPEG => "jpg",
-    IMAGETYPE_PNG  => "png",
+    IMAGETYPE_PNG => "png",
     IMAGETYPE_WEBP => "webp"
 ];
 
-if (
-    $imageInfo === false ||
-    !isset($allowedTypes[$imageInfo[2]])
-) {
-    http_response_code(415);
+$imageType = $imageInfo[2];
+
+if (!isset($allowedTypes[$imageType])) {
+    http_response_code(400);
 
     echo json_encode([
         "success" => false,
-        "message" => "Format foto harus JPEG, PNG, atau WebP."
+        "message" => "Format foto harus JPG, PNG, atau WebP."
     ]);
-
     exit;
 }
+
+$extension = $allowedTypes[$imageType];
 
 $uploadDir = __DIR__ . "/uploads/profiles/";
 
-// Pastikan folder penyimpanan tersedia
-if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
-    http_response_code(500);
+if (!is_dir($uploadDir)) {
+    if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+        http_response_code(500);
 
-    echo json_encode([
-        "success" => false,
-        "message" => "Folder penyimpanan foto tidak tersedia."
-    ]);
-
-    exit;
+        echo json_encode([
+            "success" => false,
+            "message" => "Folder penyimpanan foto gagal dibuat."
+        ]);
+        exit;
+    }
 }
 
-// Buat nama file acak agar tidak bentrok
-$extension = $allowedTypes[$imageInfo[2]];
-$fileName = bin2hex(random_bytes(16)) . "." . $extension;
-
-$destination = $uploadDir . $fileName;
-
-// Pindahkan gambar ke folder penyimpanan
-if (!move_uploaded_file($file["tmp_name"], $destination)) {
-    http_response_code(500);
-
-    echo json_encode([
-        "success" => false,
-        "message" => "Foto gagal disimpan."
-    ]);
-
-    exit;
-}
-
-// Siapkan path relatif untuk database
-$profilePicture = "uploads/profiles/" . $fileName;
+$newFileName = bin2hex(random_bytes(16)) . "." . $extension;
+$destination = $uploadDir . $newFileName;
+$relativePath = "uploads/profiles/" . $newFileName;
 
 try {
-    // Ambil foto lama milik pengguna yang login
     $stmt = $pdo->prepare(
         "SELECT profile_picture
          FROM users
@@ -144,12 +124,25 @@ try {
     $user = $stmt->fetch();
 
     if (!$user) {
-        throw new RuntimeException("Pengguna tidak ditemukan.");
+        http_response_code(404);
+
+        echo json_encode([
+            "success" => false,
+            "message" => "Pengguna tidak ditemukan."
+        ]);
+        exit;
     }
 
-    $oldPicture = $user["profile_picture"];
+    if (!move_uploaded_file($file["tmp_name"], $destination)) {
+        http_response_code(500);
 
-    // Perbarui foto profil pengguna
+        echo json_encode([
+            "success" => false,
+            "message" => "Foto gagal disimpan."
+        ]);
+        exit;
+    }
+
     $stmt = $pdo->prepare(
         "UPDATE users
          SET profile_picture = :profile_picture
@@ -157,47 +150,47 @@ try {
     );
 
     $stmt->execute([
-        "profile_picture" => $profilePicture,
+        "profile_picture" => $relativePath,
         "user_id" => $authenticatedUserId
     ]);
 
+    $oldPicture = $user["profile_picture"];
+
+    if (
+        !empty($oldPicture) &&
+        str_starts_with($oldPicture, "uploads/profiles/") &&
+        basename($oldPicture) === substr(
+            $oldPicture,
+            strlen("uploads/profiles/")
+        )
+    ) {
+        $oldFile = __DIR__ . "/" . $oldPicture;
+
+        if (is_file($oldFile) && $oldFile !== $destination) {
+            unlink($oldFile);
+        }
+    }
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Foto profil berhasil diperbarui.",
+        "data" => [
+            "user_id" => $authenticatedUserId,
+            "profile_picture" => $relativePath
+        ]
+    ]);
+
 } catch (Throwable $e) {
-    // Hapus file baru jika database gagal diperbarui
-    if (is_file($destination)) {
+    if (isset($destination) && is_file($destination)) {
         unlink($destination);
     }
+
+    error_log($e->getMessage());
 
     http_response_code(500);
 
     echo json_encode([
         "success" => false,
-        "message" => "Foto gagal diperbarui di database."
+        "message" => "Terjadi kesalahan saat memperbarui foto profil."
     ]);
-
-    exit;
 }
-
-// Hapus foto lama hanya jika berada di folder profil
-// dan bukan file yang baru saja disimpan.
-if (
-    !empty($oldPicture) &&
-    $oldPicture !== $profilePicture &&
-    strpos($oldPicture, "uploads/profiles/") === 0 &&
-    basename($oldPicture) === $oldPicture
-) {
-    $oldPath = $uploadDir . $oldPicture;
-
-    if (is_file($oldPath)) {
-        unlink($oldPath);
-    }
-}
-
-// Respons berhasil
-echo json_encode([
-    "success" => true,
-    "message" => "Foto profil berhasil diperbarui.",
-    "data" => [
-        "user_id" => $authenticatedUserId,
-        "profile_picture" => $profilePicture
-    ]
-]);
