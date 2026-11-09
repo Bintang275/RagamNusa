@@ -1,0 +1,514 @@
+{
+  "info": {
+    "name": "RagamNusa REST API",
+    "description": "Koleksi Postman Lengkap untuk Pengujian API Backend RagamNusa (Platform Penyewaan Produk Budaya Indonesia)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost/RagamNusa",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & Profile",
+      "item": [
+        {
+          "name": "Register Renter",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sari Wulandari\",\n  \"email\": \"sari@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"081234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register.php",
+              "host": ["{{base_url}}"],
+              "path": ["register.php"]
+            }
+          }
+        },
+        {
+          "name": "Register Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin RagamNusa\",\n  \"email\": \"admin@ragamnusa.id\",\n  \"password\": \"adminrahasia123\",\n  \"phone\": \"08111222333\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register_admin.php",
+              "host": ["{{base_url}}"],
+              "path": ["register_admin.php"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.data.token.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sari@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login.php",
+              "host": ["{{base_url}}"],
+              "path": ["login.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/profile.php",
+              "host": ["{{base_url}}"],
+              "path": ["profile.php"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sari Wulandari Update\",\n  \"phone\": \"081298765432\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/update_profile.php",
+              "host": ["{{base_url}}"],
+              "path": ["update_profile.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Categories & Products",
+      "item": [
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/categories.php",
+              "host": ["{{base_url}}"],
+              "path": ["categories.php"]
+            }
+          }
+        },
+        {
+          "name": "Get All Active Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products.php",
+              "host": ["{{base_url}}"],
+              "path": ["products.php"]
+            }
+          }
+        },
+        {
+          "name": "Get My Products (Owner)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/my_products.php",
+              "host": ["{{base_url}}"],
+              "path": ["my_products.php"]
+            }
+          }
+        },
+        {
+          "name": "Add Product (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": 1,\n  \"name\": \"Paket Busana Adat Bali Payas Agung\",\n  \"description\": \"Busana adat Bali lengkap dengan mahkota dan perhiasan tradisional.\",\n  \"price_per_day\": 150000,\n  \"deposit\": 100000,\n  \"stock\": 3,\n  \"condition_status\": \"Sangat Baik\",\n  \"location\": \"Denpasar\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/add_product.php",
+              "host": ["{{base_url}}"],
+              "path": ["add_product.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Availability (Ketersediaan)",
+      "item": [
+        {
+          "name": "Add Availability (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"start_date\": \"2026-11-10\",\n  \"end_date\": \"2026-12-31\",\n  \"status\": \"available\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/add_availability.php",
+              "host": ["{{base_url}}"],
+              "path": ["add_availability.php"]
+            }
+          }
+        },
+        {
+          "name": "Get My Availability (Owner)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/my_availability.php?product_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["my_availability.php"],
+              "query": [{ "key": "product_id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Rentals (Transaksi Sewa)",
+      "item": [
+        {
+          "name": "Create Rental (Renter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start_date\": \"2026-11-15\",\n  \"end_date\": \"2026-11-17\",\n  \"shipping_cost\": 25000,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/create_rental.php",
+              "host": ["{{base_url}}"],
+              "path": ["create_rental.php"]
+            }
+          }
+        },
+        {
+          "name": "My Rentals (Renter)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/my_rentals.php",
+              "host": ["{{base_url}}"],
+              "path": ["my_rentals.php"]
+            }
+          }
+        },
+        {
+          "name": "Owner Rentals (Incoming Orders)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/owner_rentals.php",
+              "host": ["{{base_url}}"],
+              "path": ["owner_rentals.php"]
+            }
+          }
+        },
+        {
+          "name": "Rental Details",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/rental_details.php?rentals_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["rental_details.php"],
+              "query": [{ "key": "rentals_id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Cancel Rental (Pending Only by Renter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rentals_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cancel_details.php",
+              "host": ["{{base_url}}"],
+              "path": ["cancel_details.php"]
+            }
+          }
+        },
+        {
+          "name": "Update Rental Status (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rentals_id\": 1,\n  \"rental_status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/update_rental_status.php",
+              "host": ["{{base_url}}"],
+              "path": ["update_rental_status.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Payments & Refunds",
+      "item": [
+        {
+          "name": "Create Payment (Simulasi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rentals_id\": 1,\n  \"payment_method\": \"qris\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/create_payment.php",
+              "host": ["{{base_url}}"],
+              "path": ["create_payment.php"]
+            }
+          }
+        },
+        {
+          "name": "Update Payment Status (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_id\": 1,\n  \"payment_status\": \"paid\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/update_payment_status.php",
+              "host": ["{{base_url}}"],
+              "path": ["update_payment_status.php"]
+            }
+          }
+        },
+        {
+          "name": "Create Refund Deposit (After Completed)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rentals_id\": 1,\n  \"refund_reason\": \"Pengembalian deposit sewa selesai dan barang utuh.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/create_refund.php",
+              "host": ["{{base_url}}"],
+              "path": ["create_refund.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Disputes (Sengketa)",
+      "item": [
+        {
+          "name": "Create Dispute (Renter / Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rentals_id\": 1,\n  \"reason\": \"Barang tidak sesuai deskripsi\",\n  \"description\": \"Ukuran kebaya berbeda dengan yang tertera di aplikasi.\",\n  \"evidence_image\": \"https://example.com/foto_bukti.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/create_dispute.php",
+              "host": ["{{base_url}}"],
+              "path": ["create_dispute.php"]
+            }
+          }
+        },
+        {
+          "name": "Get My Disputes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/my_disputes.php",
+              "host": ["{{base_url}}"],
+              "path": ["my_disputes.php"]
+            }
+          }
+        },
+        {
+          "name": "Update Dispute Status (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dispute_id\": 1,\n  \"dispute_status\": \"resolved\",\n  \"admin_notes\": \"Penyewa dan pemilik sepakat pengembalian sebagian dana sewa.\",\n  \"next_rental_status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/update_dispute_status.php",
+              "host": ["{{base_url}}"],
+              "path": ["update_dispute_status.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Reviews (Rating & Ulasan)",
+      "item": [
+        {
+          "name": "Create Review (Renter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rentals_id\": 1,\n  \"product_id\": 1,\n  \"rating\": 5,\n  \"comment\": \"Kebayanya sangat bagus, bersih, dan pengirimannya cepat!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/create_review.php",
+              "host": ["{{base_url}}"],
+              "path": ["create_review.php"]
+            }
+          }
+        },
+        {
+          "name": "Get Product Reviews",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product_reviews.php?product_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["product_reviews.php"],
+              "query": [{ "key": "product_id", "value": "1" }]
+            }
+          }
+        },
+        {
+          "name": "Get Owner Reviews (Shop Reputation)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/owner_reviews.php",
+              "host": ["{{base_url}}"],
+              "path": ["owner_reviews.php"]
+            }
+          }
+        },
+        {
+          "name": "Reply Review (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"review_id\": 1,\n  \"reply\": \"Terima kasih banyak sudah menyewa di toko kami!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/owner_reviews.php",
+              "host": ["{{base_url}}"],
+              "path": ["owner_reviews.php"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Admin Dashboard",
+      "item": [
+        {
+          "name": "Get Admin Summary (Dashboard Overview)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/admin_summary.php",
+              "host": ["{{base_url}}"],
+              "path": ["admin_summary.php"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
