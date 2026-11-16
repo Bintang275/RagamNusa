@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/rental_helpers.php';
@@ -32,7 +31,6 @@ if (
     rentalResponse(false, 'Data penyewaan tidak valid.', null, 400);
 }
 
-// Gabungkan produk yang sama agar tidak terjadi duplikasi.
 $quantities = [];
 
 foreach ($items as $item) {
@@ -66,7 +64,6 @@ try {
 
     foreach ($quantities as $productId => $quantity) {
 
-        // Mengunci baris produk selama transaksi berlangsung.
         $stmt = $pdo->prepare(
             "SELECT product_id, owner_id, name, price_per_day,
                     deposit, stock, status
@@ -82,7 +79,6 @@ try {
             throw new Exception("Produk ID $productId tidak tersedia.");
         }
 
-        // Periksa ketersediaan tanggal.
         $stmt = $pdo->prepare(
             "SELECT COUNT(*)
              FROM availability
@@ -104,7 +100,6 @@ try {
             );
         }
 
-        // Pastikan tidak ada jadwal yang diblokir.
         $stmt = $pdo->prepare(
             "SELECT COUNT(*)
              FROM availability
@@ -126,7 +121,6 @@ try {
             );
         }
 
-        // Hitung stok yang sudah digunakan transaksi lain.
         $stmt = $pdo->prepare(
             "SELECT COALESCE(SUM(od.quantity), 0)
              FROM order_details od
@@ -172,7 +166,6 @@ try {
         ];
     }
 
-    // Buat transaksi utama.
     $stmt = $pdo->prepare(
         "INSERT INTO rentals
          (renter_id, start_date, end_date,
@@ -193,7 +186,6 @@ try {
 
     $rentalId = (int) $pdo->lastInsertId();
 
-    // Simpan seluruh produk ke detail transaksi.
     $stmt = $pdo->prepare(
         "INSERT INTO order_details
          (rentals_id, product_id, quantity,

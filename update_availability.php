@@ -1,11 +1,9 @@
-
 <?php
 
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/auth.php";
 
-// Periksa role dan status akun
 try {
     $stmt = $pdo->prepare(
         "SELECT role, status
@@ -48,7 +46,6 @@ try {
     exit;
 }
 
-// Pastikan menggunakan POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
     echo json_encode([
@@ -58,7 +55,6 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
-// Ambil data JSON
 $input = json_decode(file_get_contents("php://input"), true);
 
 if (!is_array($input)) {
@@ -70,7 +66,6 @@ if (!is_array($input)) {
     exit;
 }
 
-// Validasi ID
 if (
     !isset($input["availability_id"]) ||
     filter_var($input["availability_id"], FILTER_VALIDATE_INT) === false ||
@@ -102,7 +97,6 @@ if (
     exit;
 }
 
-// Validasi tanggal
 $start = DateTime::createFromFormat("!Y-m-d", $startDate);
 $end = DateTime::createFromFormat("!Y-m-d", $endDate);
 
@@ -121,7 +115,6 @@ if (
     exit;
 }
 
-// Owner hanya boleh memilih available atau unavailable
 $allowedStatuses = ["available", "unavailable"];
 
 if (!in_array($status, $allowedStatuses, true)) {
@@ -135,7 +128,6 @@ if (!in_array($status, $allowedStatuses, true)) {
 
 try {
 
-    // Periksa kepemilikan jadwal
     $stmt = $pdo->prepare(
         "SELECT a.availability_id, a.status
          FROM availability a
@@ -162,7 +154,6 @@ try {
         exit;
     }
 
-    // Jadwal booked tidak boleh diubah oleh owner
     if ($availability["status"] === "booked") {
         http_response_code(409);
         echo json_encode([
@@ -172,7 +163,6 @@ try {
         exit;
     }
 
-    // Periksa bentrokan dengan jadwal lain
     $stmt = $pdo->prepare(
         "SELECT availability_id
          FROM availability
@@ -203,7 +193,6 @@ try {
         exit;
     }
 
-    // Perbarui jadwal
     $stmt = $pdo->prepare(
         "UPDATE availability
          SET start_date = :start_date,

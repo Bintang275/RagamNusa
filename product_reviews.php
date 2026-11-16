@@ -25,7 +25,6 @@ if (!$productId) {
 }
 
 try {
-    // 1. Ambil ulasan produk beserta data pengulas
     $stmt = $pdo->prepare("
         SELECT 
             r.review_id,
@@ -47,7 +46,6 @@ try {
     $stmt->execute(['product_id' => $productId]);
     $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // 2. Hitung ringkasan rating
     $summaryStmt = $pdo->prepare("
         SELECT 
             COUNT(*) AS total_reviews,

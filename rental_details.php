@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/rental_helpers.php';
@@ -34,8 +33,6 @@ if (!$rental) {
     rentalResponse(false, 'Transaksi tidak ditemukan.', null, 404);
 }
 
-// Hak akses: penyewa pemilik transaksi, admin,
-// atau owner yang memiliki produk di transaksi tersebut.
 $allowed = (
     $user['role'] === 'admin' ||
     (
@@ -80,7 +77,6 @@ $sql = "SELECT
 
 $params = ['rental_id' => $rentalId];
 
-// Owner hanya melihat produk miliknya.
 if ($user['role'] === 'owner') {
     $sql .= " AND p.owner_id = :owner_id";
     $params['owner_id'] = $user['user_id'];

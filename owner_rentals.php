@@ -1,4 +1,3 @@
-
 <?php
 
 require_once __DIR__ . '/rental_helpers.php';

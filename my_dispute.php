@@ -17,7 +17,6 @@ $allowedStatuses = ['open', 'in_review', 'resolved', 'rejected'];
 
 try {
     if ($role === 'admin') {
-        // Admin dapat melihat seluruh sengketa di sistem
         $sql = "
             SELECT 
                 d.dispute_id,
@@ -53,7 +52,6 @@ try {
         $disputes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } elseif ($role === 'owner') {
-        // Owner melihat sengketa yang berkaitan dengan produk miliknya
         $stmt = $pdo->prepare("
             SELECT DISTINCT
                 d.dispute_id,
@@ -82,7 +80,6 @@ try {
         $disputes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } else {
-        // Renter melihat sengketa yang diajukan pada pesanannya
         $stmt = $pdo->prepare("
             SELECT 
                 d.dispute_id,

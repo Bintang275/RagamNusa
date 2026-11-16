@@ -1,11 +1,9 @@
-
 <?php
 header("Content-Type: application/json");
 
 require_once "config.php";
 require_once "auth.php";
 
-// Hanya menerima POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
     echo json_encode([
@@ -15,7 +13,6 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
-// Periksa akun owner
 $stmt = $pdo->prepare(
     "SELECT role, status
      FROM users
@@ -37,7 +34,6 @@ if (!$user || $user["role"] !== "owner" || $user["status"] !== "active") {
     exit;
 }
 
-// Ambil data JSON
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (!is_array($data)) {
@@ -49,7 +45,6 @@ if (!is_array($data)) {
     exit;
 }
 
-// Ambil input
 $categoryId = $data["category_id"] ?? null;
 $name = trim($data["name"] ?? "");
 $description = trim($data["description"] ?? "");
@@ -59,7 +54,6 @@ $conditionStatus = $data["condition_status"] ?? "";
 $location = trim($data["location"] ?? "");
 $stock = $data["stock"] ?? null;
 
-// Validasi kategori
 if (!filter_var($categoryId, FILTER_VALIDATE_INT) || $categoryId <= 0) {
     http_response_code(400);
     echo json_encode([
@@ -69,7 +63,6 @@ if (!filter_var($categoryId, FILTER_VALIDATE_INT) || $categoryId <= 0) {
     exit;
 }
 
-// Validasi nama
 if ($name === "" || strlen($name) > 150) {
     http_response_code(400);
     echo json_encode([
@@ -79,7 +72,6 @@ if ($name === "" || strlen($name) > 150) {
     exit;
 }
 
-// Validasi harga
 if (!is_numeric($pricePerDay) || $pricePerDay <= 0) {
     http_response_code(400);
     echo json_encode([
@@ -89,7 +81,6 @@ if (!is_numeric($pricePerDay) || $pricePerDay <= 0) {
     exit;
 }
 
-// Validasi deposit
 if (!is_numeric($deposit) || $deposit < 0) {
     http_response_code(400);
     echo json_encode([
@@ -99,7 +90,6 @@ if (!is_numeric($deposit) || $deposit < 0) {
     exit;
 }
 
-// Validasi kondisi produk
 $allowedConditions = ["new", "good", "fair", "poor"];
 
 if (!in_array($conditionStatus, $allowedConditions, true)) {
@@ -111,7 +101,6 @@ if (!in_array($conditionStatus, $allowedConditions, true)) {
     exit;
 }
 
-// Validasi stok
 if (
     filter_var($stock, FILTER_VALIDATE_INT) === false ||
     $stock < 1
@@ -125,7 +114,6 @@ if (
 }
 
 try {
-    // Pastikan kategori tersedia
     $stmt = $pdo->prepare(
         "SELECT category_id
          FROM categories
@@ -146,7 +134,6 @@ try {
         exit;
     }
 
-    // Simpan produk
     $stmt = $pdo->prepare(
         "INSERT INTO products (
             owner_id,

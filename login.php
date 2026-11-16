@@ -91,13 +91,10 @@ try {
     $accessTokenHash = hash("sha256", $accessToken);
     $sessionTokenHash = hash("sha256", $sessionToken);
 
-    // Menentukan masa berlaku token
     $accessExpiresAt = date("Y-m-d H:i:s", time() + (15 * 60));
 
-    // Session berlaku 30 hari dan dapat diperpanjang
     $sessionExpiresAt = date("Y-m-d H:i:s", time() + (30 * 24 * 60 * 60));
 
-    // Menyimpan kedua token ke database
     $tokenStmt = $pdo->prepare(
         "INSERT INTO user_tokens
             (user_id, token_hash, token_type, expires_at)

@@ -8,7 +8,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     rentalResponse(false, 'Method harus POST.', null, 405);
 }
 
-// Hanya Admin yang berhak memproses dan menyelesaikan sengketa
 $admin = rentalRequireRole('admin');
 $input = rentalInput();
 
@@ -73,7 +72,6 @@ try {
         'dispute_id' => $disputeId
     ]);
 
-    // Jika admin menentukan kelanjutan status transaksi rental
     if ($nextRentalStatus !== '') {
         $updateRental = $pdo->prepare("
             UPDATE rentals

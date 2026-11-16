@@ -1,11 +1,9 @@
-
 <?php
 
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/auth.php";
 
-// Periksa role dan status akun
 try {
     $stmt = $pdo->prepare(
         "SELECT role, status
@@ -38,7 +36,6 @@ try {
         exit;
     }
 
-    // Ambil jadwal ketersediaan produk milik owner
     $stmt = $pdo->prepare(
         "SELECT
             a.availability_id,

@@ -8,7 +8,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     rentalResponse(false, 'Method harus POST.', null, 405);
 }
 
-// Hanya Renter yang dapat memberikan ulasan produk
 $user = rentalRequireRole('renter');
 $input = rentalInput();
 
@@ -28,7 +27,6 @@ if ($rating < 1 || $rating > 5) {
 try {
     $pdo->beginTransaction();
 
-    // 1. Validasi transaksi rental
     $rentalStmt = $pdo->prepare("
         SELECT rentals_id, renter_id, rental_status
         FROM rentals
@@ -52,7 +50,6 @@ try {
         rentalResponse(false, 'Ulasan hanya dapat diberikan setelah status penyewaan selesai (completed).', null, 400);
     }
 
-    // 2. Pastikan produk memang termasuk dalam pesanan rental ini
     $itemStmt = $pdo->prepare("
         SELECT order_detail_id
         FROM order_details
@@ -69,7 +66,6 @@ try {
         rentalResponse(false, 'Produk tidak ditemukan dalam transaksi penyewaan ini.', null, 404);
     }
 
-    // 3. Pastikan belum pernah memberi ulasan untuk produk ini di rental ini
     $checkReview = $pdo->prepare("
         SELECT review_id
         FROM reviews
@@ -88,7 +84,6 @@ try {
         rentalResponse(false, 'Anda sudah memberikan ulasan untuk produk ini pada penyewaan tersebut.', null, 409);
     }
 
-    // 4. Simpan ulasan
     $insert = $pdo->prepare("
         INSERT INTO reviews
         (rentals_id, product_id, user_id, rating, comment)

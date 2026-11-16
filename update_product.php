@@ -1,4 +1,3 @@
-
 <?php
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -48,7 +47,6 @@ try {
     exit;
 }
 
-// Pastikan menggunakan POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
     echo json_encode([
@@ -58,7 +56,6 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
-// Ambil data JSON
 $input = json_decode(file_get_contents("php://input"), true);
 
 if (!is_array($input)) {
@@ -70,7 +67,6 @@ if (!is_array($input)) {
     exit;
 }
 
-// Validasi product_id
 if (
     !isset($input["product_id"]) ||
     filter_var($input["product_id"], FILTER_VALIDATE_INT) === false ||
@@ -84,7 +80,6 @@ if (
     exit;
 }
 
-// Periksa tipe data teks
 foreach (["name", "description", "location", "condition_status"] as $field) {
     if (
         isset($input[$field]) &&
@@ -117,7 +112,6 @@ $stock = filter_var(
 $condition = $input["condition_status"] ?? "good";
 $location = $input["location"] ?? null;
 
-// Validasi data wajib
 if (
     $categoryId === false ||
     $categoryId <= 0 ||
@@ -136,7 +130,6 @@ if (
     exit;
 }
 
-// Validasi kondisi produk
 $allowedConditions = ["new", "good", "fair", "poor"];
 
 if (!in_array($condition, $allowedConditions, true)) {
@@ -148,7 +141,6 @@ if (!in_array($condition, $allowedConditions, true)) {
     exit;
 }
 
-// Validasi panjang teks
 if (
     strlen($name) > 150 ||
     ($description !== null && strlen($description) > 65535) ||
@@ -162,7 +154,6 @@ if (
     exit;
 }
 
-// Validasi harga dan deposit
 if ((float)$price <= 0 || (float)$deposit < 0) {
     http_response_code(400);
     echo json_encode([
@@ -174,7 +165,6 @@ if ((float)$price <= 0 || (float)$deposit < 0) {
 
 try {
 
-    // Pastikan produk benar-benar milik owner yang login
     $stmt = $pdo->prepare(
         "SELECT product_id
          FROM products
@@ -197,7 +187,6 @@ try {
         exit;
     }
 
-    // Pastikan kategori tersedia
     $stmt = $pdo->prepare(
         "SELECT category_id
          FROM categories
@@ -218,7 +207,6 @@ try {
         exit;
     }
 
-    // Perbarui produk
     $stmt = $pdo->prepare(
         "UPDATE products
          SET
@@ -247,7 +235,6 @@ try {
         "owner_id" => $authenticatedUserId
     ]);
 
-    // Ambil data terbaru
     $stmt = $pdo->prepare(
         "SELECT
             product_id, owner_id, category_id, name, description,

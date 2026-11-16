@@ -1,11 +1,9 @@
-
 <?php
 
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/auth.php";
 
-// Periksa role dan status akun
 try {
     $stmt = $pdo->prepare(
         "SELECT role, status
@@ -48,7 +46,6 @@ try {
     exit;
 }
 
-// Pastikan menggunakan POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
     echo json_encode([
@@ -58,7 +55,6 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
-// Ambil JSON
 $input = json_decode(file_get_contents("php://input"), true);
 
 if (!is_array($input)) {
@@ -70,7 +66,6 @@ if (!is_array($input)) {
     exit;
 }
 
-// Validasi product_id
 if (
     !isset($input["product_id"]) ||
     filter_var($input["product_id"], FILTER_VALIDATE_INT) === false ||
@@ -84,13 +79,11 @@ if (
     exit;
 }
 
-// Ambil data
 $productId = (int)$input["product_id"];
 $startDate = $input["start_date"] ?? "";
 $endDate = $input["end_date"] ?? "";
 $status = $input["status"] ?? "available";
 
-// Validasi tipe data
 if (
     !is_string($startDate) ||
     !is_string($endDate) ||
@@ -104,7 +97,6 @@ if (
     exit;
 }
 
-// Validasi format tanggal
 $start = DateTime::createFromFormat("!Y-m-d", $startDate);
 $end = DateTime::createFromFormat("!Y-m-d", $endDate);
 
@@ -123,7 +115,6 @@ if (
     exit;
 }
 
-// Owner hanya boleh mengatur available atau unavailable
 $allowedStatuses = ["available", "unavailable"];
 
 if (!in_array($status, $allowedStatuses, true)) {
@@ -137,7 +128,6 @@ if (!in_array($status, $allowedStatuses, true)) {
 
 try {
 
-    // Pastikan produk milik owner yang login dan masih aktif
     $stmt = $pdo->prepare(
         "SELECT product_id
          FROM products
@@ -161,7 +151,6 @@ try {
         exit;
     }
 
-    // Cek apakah tanggal bertabrakan
     $stmt = $pdo->prepare(
         "SELECT availability_id
          FROM availability
@@ -186,7 +175,6 @@ try {
         exit;
     }
 
-    // Simpan ketersediaan
     $stmt = $pdo->prepare(
         "INSERT INTO availability
             (product_id, start_date, end_date, status)

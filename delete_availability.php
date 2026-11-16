@@ -1,4 +1,3 @@
-
 <?php
 header("Content-Type: application/json");
 
@@ -14,7 +13,6 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
-// Pastikan pengguna adalah owner aktif
 $stmt = $pdo->prepare(
     "SELECT role, status
      FROM users
@@ -36,7 +34,6 @@ if (!$user || $user["role"] !== "owner" || $user["status"] !== "active") {
     exit;
 }
 
-// Ambil data JSON
 $data = json_decode(file_get_contents("php://input"), true);
 
 $availabilityId = $data["availability_id"] ?? null;
@@ -51,7 +48,6 @@ if (!$availabilityId || !filter_var($availabilityId, FILTER_VALIDATE_INT)) {
 }
 
 try {
-    // Pastikan jadwal milik produk owner yang sedang login
     $stmt = $pdo->prepare(
         "SELECT a.availability_id, a.status
          FROM availability a
@@ -77,7 +73,6 @@ try {
         exit;
     }
 
-    // Jadwal yang sudah dipesan tidak boleh dihapus
     if ($availability["status"] === "booked") {
         http_response_code(400);
         echo json_encode([
@@ -87,7 +82,6 @@ try {
         exit;
     }
 
-    // Hapus jadwal
     $stmt = $pdo->prepare(
         "DELETE FROM availability
          WHERE availability_id = :availability_id"

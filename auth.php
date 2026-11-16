@@ -1,11 +1,9 @@
-
 <?php
 
 require_once __DIR__ . "/config.php";
 
 header("Content-Type: application/json; charset=UTF-8");
 
-// Ambil access token dari header Authorization
 $headers = getallheaders();
 
 $authorization = $headers["Authorization"]
@@ -25,7 +23,6 @@ if (!preg_match('/^Bearer\s+(\S+)$/i', $authorization, $matches)) {
 
 $accessToken = $matches[1];
 
-// Hash token untuk mencocokkan dengan database
 $tokenHash = hash("sha256", $accessToken);
 
 try {
@@ -56,7 +53,6 @@ try {
         exit;
     }
 
-    // Identitas pengguna yang sudah terautentikasi
     $authenticatedUserId = (int) $tokenData["user_id"];
 
 } catch (PDOException $e) {

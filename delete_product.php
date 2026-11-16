@@ -1,4 +1,3 @@
-
 <?php
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -48,7 +47,6 @@ try {
     exit;
 }
 
-// Pastikan menggunakan POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
     echo json_encode([
@@ -58,7 +56,6 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
-// Ambil data JSON
 $input = json_decode(file_get_contents("php://input"), true);
 
 if (
@@ -78,8 +75,6 @@ if (
 $productId = (int)$input["product_id"];
 
 try {
-
-    // Periksa kepemilikan produk
     $stmt = $pdo->prepare(
         "SELECT product_id, status
          FROM products
@@ -113,7 +108,6 @@ try {
         exit;
     }
 
-    // Nonaktifkan produk, bukan menghapus permanen
     $stmt = $pdo->prepare(
         "UPDATE products
          SET status = 'inactive'

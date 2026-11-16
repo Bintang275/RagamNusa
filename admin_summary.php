@@ -8,11 +8,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     rentalResponse(false, 'Method harus GET.', null, 405);
 }
 
-// Khusus diakses oleh Admin untuk keperluan website dashboard
 $admin = rentalRequireRole('admin');
 
 try {
-    // 1. Ringkasan Pengguna
     $usersStmt = $pdo->query("
         SELECT 
             role, 
@@ -25,11 +23,9 @@ try {
         $usersByRole[$row['role']] = (int)$row['total'];
     }
 
-    // 2. Ringkasan Produk & Kategori
     $productsCount = (int)$pdo->query("SELECT COUNT(*) FROM products WHERE status = 'active'")->fetchColumn();
     $categoriesCount = (int)$pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn();
 
-    // 3. Ringkasan Status Transaksi Rental
     $rentalsStmt = $pdo->query("
         SELECT 
             rental_status, 
@@ -49,7 +45,6 @@ try {
         $rentalsByStatus[$row['rental_status']] = (int)$row['total'];
     }
 
-    // 4. Ringkasan Keuangan (Total Pendapatan Sewa & Deposit dari Pembayaran Lunas)
     $financeStmt = $pdo->query("
         SELECT 
             COUNT(*) AS total_paid_transactions,
@@ -59,12 +54,10 @@ try {
     ");
     $finance = $financeStmt->fetch(PDO::FETCH_ASSOC);
 
-    // 5. Antrean Operasional Admin yang Butuh Perhatian
     $pendingPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE payment_status = 'pending'")->fetchColumn();
     $pendingRefunds = (int)$pdo->query("SELECT COUNT(*) FROM refunds WHERE refund_status IN ('pending', 'processing')")->fetchColumn();
     $openDisputes = (int)$pdo->query("SELECT COUNT(*) FROM disputes WHERE dispute_status IN ('open', 'in_review')")->fetchColumn();
 
-    // 6. Transaksi Terbaru
     $recentStmt = $pdo->query("
         SELECT 
             r.rentals_id,

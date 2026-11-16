@@ -32,7 +32,6 @@ if (strlen($reason) > 255) {
 try {
     $pdo->beginTransaction();
 
-    // 1. Kunci data rental
     $stmt = $pdo->prepare(
         "SELECT rentals_id, renter_id, rental_status
          FROM rentals
@@ -47,7 +46,6 @@ try {
         rentalResponse(false, 'Transaksi penyewaan tidak ditemukan.', null, 404);
     }
 
-    // 2. Verifikasi keterlibatan pengguna (harus Renter atau Owner produk di rental tsb)
     $isRenter = ((int)$rental['renter_id'] === (int)$user['user_id']);
     $isOwner = false;
 
@@ -76,7 +74,6 @@ try {
         );
     }
 
-    // 3. Validasi status rental yang boleh diajukan sengketa
     $allowedStatuses = ['confirmed', 'ongoing', 'completed', 'disputed'];
     if (!in_array($rental['rental_status'], $allowedStatuses, true)) {
         $pdo->rollBack();
@@ -88,7 +85,6 @@ try {
         );
     }
 
-    // 4. Periksa apakah sudah ada sengketa yang masih terbuka / sedang diproses
     $checkDispute = $pdo->prepare(
         "SELECT dispute_id
          FROM disputes
@@ -107,7 +103,6 @@ try {
         );
     }
 
-    // 5. Masukkan ke tabel disputes
     $insert = $pdo->prepare(
         "INSERT INTO disputes
          (rentals_id, user_id, reason, description, evidence_image, dispute_status)
@@ -125,7 +120,6 @@ try {
 
     $disputeId = (int)$pdo->lastInsertId();
 
-    // 6. Perbarui status rental menjadi 'disputed' jika belum
     if ($rental['rental_status'] !== 'disputed') {
         $updateRental = $pdo->prepare(
             "UPDATE rentals

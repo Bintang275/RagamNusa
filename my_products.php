@@ -6,7 +6,6 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once __DIR__ . "/auth.php";
 
 try {
-    // Periksa role dan status akun
     $stmt = $pdo->prepare(
         "SELECT role, status
          FROM users
@@ -38,7 +37,6 @@ try {
         exit;
     }
 
-    // Ambil produk milik owner yang sedang login
     $stmt = $pdo->prepare(
         "SELECT
             product_id, owner_id, category_id, name, description,

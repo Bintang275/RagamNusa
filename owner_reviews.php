@@ -4,13 +4,9 @@ require_once __DIR__ . '/rental_helpers.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
-// Hanya Owner yang dapat mengakses endpoint ini
 $user = rentalRequireRole('owner');
 $ownerId = (int)$user['user_id'];
 
-// ====================================================================
-// A. METHOD POST: Owner membalas ulasan penyewa
-// ====================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = rentalInput();
 
@@ -24,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo->beginTransaction();
 
-        // Pastikan ulasan tersebut ditujukan untuk produk milik owner ini
         $stmt = $pdo->prepare("
             SELECT r.review_id, p.name AS product_name
             FROM reviews r
@@ -71,12 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ====================================================================
-// B. METHOD GET: Mengambil seluruh ulasan toko milik owner
-// ====================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
-        // 1. Ambil daftar ulasan produk toko owner
         $stmt = $pdo->prepare("
             SELECT 
                 r.review_id,
@@ -100,7 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmt->execute(['owner_id' => $ownerId]);
         $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 2. Statistik ulasan toko untuk kartu reputasi (OwnerReviewsPage)
         $statStmt = $pdo->prepare("
             SELECT 
                 COUNT(*) AS total_reviews,
