@@ -8,19 +8,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     rentalResponse(false, 'Method harus POST.', null, 405);
 }
 
+// Hanya Admin yang berhak memproses dan menyelesaikan sengketa
 $admin = rentalRequireRole('admin');
 $input = rentalInput();
 
 $disputeId = filter_var($input['dispute_id'] ?? null, FILTER_VALIDATE_INT);
 $newStatus = trim($input['dispute_status'] ?? '');
-$adminNotes = trim($input['admin_notes'] ?? '');
+$resolution = trim($input['admin_notes'] ?? ($input['resolution'] ?? ''));
 $nextRentalStatus = trim($input['next_rental_status'] ?? '');
 
-$allowedStatuses = ['in_review', 'resolved', 'rejected'];
+// Kompatibilitas alias: in_review -> investigating
+if ($newStatus === 'in_review') {
+    $newStatus = 'investigating';
+}
+
+$allowedStatuses = ['investigating', 'resolved', 'rejected'];
 if (!$disputeId || !in_array($newStatus, $allowedStatuses, true)) {
     rentalResponse(
         false,
-        'Data tidak valid. Status sengketa yang diizinkan: in_review, resolved, rejected.',
+        'Data tidak valid. Status sengketa yang diizinkan: investigating, resolved, rejected.',
         null,
         400
     );
@@ -53,25 +59,20 @@ try {
         rentalResponse(false, 'Data sengketa tidak ditemukan.', null, 404);
     }
 
-    $isFinalStatus = in_array($newStatus, ['resolved', 'rejected'], true);
-
     $updateDispute = $pdo->prepare("
         UPDATE disputes
         SET dispute_status = :status,
-            admin_notes = :notes,
-            resolved_by = :resolved_by,
-            resolved_at = CASE WHEN :is_final = 1 THEN NOW() ELSE resolved_at END
+            resolution = :resolution
         WHERE dispute_id = :dispute_id
     ");
 
     $updateDispute->execute([
         'status' => $newStatus,
-        'notes' => $adminNotes !== '' ? $adminNotes : null,
-        'resolved_by' => $admin['user_id'],
-        'is_final' => $isFinalStatus ? 1 : 0,
+        'resolution' => $resolution !== '' ? $resolution : null,
         'dispute_id' => $disputeId
     ]);
 
+    // Jika admin menentukan kelanjutan status transaksi rental
     if ($nextRentalStatus !== '') {
         $updateRental = $pdo->prepare("
             UPDATE rentals
@@ -89,7 +90,7 @@ try {
     rentalResponse(true, 'Status sengketa berhasil diperbarui.', [
         'dispute_id' => $disputeId,
         'dispute_status' => $newStatus,
-        'admin_notes' => $adminNotes,
+        'resolution' => $resolution,
         'next_rental_status' => $nextRentalStatus !== '' ? $nextRentalStatus : null
     ]);
 

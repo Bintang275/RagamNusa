@@ -1,0 +1,5 @@
+$kind: collection
+description: Koleksi Postman Lengkap untuk Pengujian API Backend RagamNusa (Platform Penyewaan Produk Budaya Indonesia)
+variables:
+  base_url: http://localhost/RagamNusa
+  token: ""

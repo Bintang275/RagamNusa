@@ -56,7 +56,7 @@ try {
 
     $pendingPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE payment_status = 'pending'")->fetchColumn();
     $pendingRefunds = (int)$pdo->query("SELECT COUNT(*) FROM refunds WHERE refund_status IN ('pending', 'processing')")->fetchColumn();
-    $openDisputes = (int)$pdo->query("SELECT COUNT(*) FROM disputes WHERE dispute_status IN ('open', 'in_review')")->fetchColumn();
+    $openDisputes = (int)$pdo->query("SELECT COUNT(*) FROM disputes WHERE dispute_status IN ('open', 'in_review', 'investigating')")->fetchColumn();
 
     $recentStmt = $pdo->query("
         SELECT 

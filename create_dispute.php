@@ -14,24 +14,21 @@ $input = rentalInput();
 $rentalId = filter_var($input['rentals_id'] ?? null, FILTER_VALIDATE_INT);
 $reason = trim($input['reason'] ?? '');
 $description = trim($input['description'] ?? '');
-$evidenceImage = trim($input['evidence_image'] ?? '');
+$evidence = trim($input['evidence'] ?? ($input['evidence_image'] ?? ''));
 
-if (!$rentalId || $reason === '' || $description === '') {
+if (!$rentalId || $reason === '') {
     rentalResponse(
         false,
-        'Data tidak lengkap. ID penyewaan, alasan, dan deskripsi wajib diisi.',
+        'Data tidak lengkap. ID penyewaan dan alasan wajib diisi.',
         null,
         400
     );
 }
 
-if (strlen($reason) > 255) {
-    rentalResponse(false, 'Alasan maksimal 255 karakter.', null, 400);
-}
-
 try {
     $pdo->beginTransaction();
 
+    // 1. Kunci data rental
     $stmt = $pdo->prepare(
         "SELECT rentals_id, renter_id, rental_status
          FROM rentals
@@ -46,6 +43,7 @@ try {
         rentalResponse(false, 'Transaksi penyewaan tidak ditemukan.', null, 404);
     }
 
+    // 2. Verifikasi keterlibatan pengguna (harus Renter atau Owner produk di rental tsb)
     $isRenter = ((int)$rental['renter_id'] === (int)$user['user_id']);
     $isOwner = false;
 
@@ -74,6 +72,7 @@ try {
         );
     }
 
+    // 3. Validasi status rental yang boleh diajukan sengketa
     $allowedStatuses = ['confirmed', 'ongoing', 'completed', 'disputed'];
     if (!in_array($rental['rental_status'], $allowedStatuses, true)) {
         $pdo->rollBack();
@@ -85,11 +84,12 @@ try {
         );
     }
 
+    // 4. Periksa apakah sudah ada sengketa yang masih terbuka / sedang diproses
     $checkDispute = $pdo->prepare(
         "SELECT dispute_id
          FROM disputes
          WHERE rentals_id = :rentals_id
-           AND dispute_status IN ('open', 'in_review')
+           AND dispute_status IN ('open', 'in_review', 'investigating')
          LIMIT 1"
     );
     $checkDispute->execute(['rentals_id' => $rentalId]);
@@ -103,23 +103,25 @@ try {
         );
     }
 
+    // 5. Masukkan ke tabel disputes sesuai kolom database (reported_by, evidence)
     $insert = $pdo->prepare(
         "INSERT INTO disputes
-         (rentals_id, user_id, reason, description, evidence_image, dispute_status)
+         (rentals_id, reported_by, reason, description, evidence, dispute_status)
          VALUES
-         (:rentals_id, :user_id, :reason, :description, :evidence_image, 'open')"
+         (:rentals_id, :reported_by, :reason, :description, :evidence, 'open')"
     );
 
     $insert->execute([
         'rentals_id' => $rentalId,
-        'user_id' => $user['user_id'],
+        'reported_by' => $user['user_id'],
         'reason' => $reason,
-        'description' => $description,
-        'evidence_image' => $evidenceImage !== '' ? $evidenceImage : null
+        'description' => $description !== '' ? $description : null,
+        'evidence' => $evidence !== '' ? $evidence : null
     ]);
 
     $disputeId = (int)$pdo->lastInsertId();
 
+    // 6. Perbarui status rental menjadi 'disputed' jika belum
     if ($rental['rental_status'] !== 'disputed') {
         $updateRental = $pdo->prepare(
             "UPDATE rentals
@@ -137,6 +139,7 @@ try {
         [
             'dispute_id' => $disputeId,
             'rentals_id' => $rentalId,
+            'reported_by' => (int)$user['user_id'],
             'reason' => $reason,
             'dispute_status' => 'open'
         ],

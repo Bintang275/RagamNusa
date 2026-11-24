@@ -162,7 +162,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"category_id\": 1,\n  \"name\": \"Paket Busana Adat Bali Payas Agung\",\n  \"description\": \"Busana adat Bali lengkap dengan mahkota dan perhiasan tradisional.\",\n  \"price_per_day\": 150000,\n  \"deposit\": 100000,\n  \"stock\": 3,\n  \"condition_status\": \"Sangat Baik\",\n  \"location\": \"Denpasar\"\n}"
+              "raw": "{\n  \"category_id\": 1,\n  \"name\": \"Paket Busana Adat Bali Payas Agung\",\n  \"description\": \"Busana adat Bali lengkap dengan mahkota dan perhiasan tradisional.\",\n  \"price_per_day\": 150000,\n  \"deposit\": 100000,\n  \"stock\": 3,\n  \"condition_status\": \"good\",\n  \"location\": \"Denpasar\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/add_product.php",

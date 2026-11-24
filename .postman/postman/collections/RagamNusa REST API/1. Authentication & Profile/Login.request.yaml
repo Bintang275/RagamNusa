@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{base_url}}/login.php"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "admin@ragamnusa.id",
+      "password": "adminrahasia123"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      var jsonData = pm.response.json();
+      if (jsonData.success && jsonData.data && jsonData.data.token) {
+          pm.collectionVariables.set('token', jsonData.data.token.access_token);
+      }
+    language: text/javascript

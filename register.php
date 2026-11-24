@@ -32,6 +32,8 @@ $name = trim($input["name"] ?? "");
 $email = strtolower(trim($input["email"] ?? ""));
 $password = $input["password"] ?? "";
 $phone = trim($input["phone"] ?? "");
+$roleInput = strtolower(trim($input["role"] ?? "renter"));
+$role = in_array($roleInput, ["renter", "owner"], true) ? $roleInput : "renter";
 
 if (
     $name === "" ||
@@ -76,14 +78,16 @@ try {
         PASSWORD_DEFAULT);
 
     $stmt = $pdo->prepare(
-        "INSERT INTO users (name, email, password, phone)
-         VALUES (:name, :email, :password, :phone)");
+        "INSERT INTO users (name, email, password, phone, role)
+         VALUES (:name, :email, :password, :phone, :role)");
 
     $stmt->execute([
         "name" => $name,
         "email" => $email,
         "password" => $hashedPassword,
-        "phone" => $phone !== "" ? $phone : null]);
+        "phone" => $phone !== "" ? $phone : null,
+        "role" => $role
+    ]);
 
     http_response_code(201);
 
@@ -94,7 +98,7 @@ try {
             "user_id" => (int) $pdo->lastInsertId(),
             "name" => $name,
             "email" => $email,
-            "role" => "renter"
+            "role" => $role
         ]
     ]);
 
