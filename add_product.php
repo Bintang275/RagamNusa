@@ -1,5 +1,5 @@
 <?php
-header("Content-Type: application/json");
+header("Content-Type: application/json; charset=UTF-8");
 
 require_once "config.php";
 require_once "auth.php";
@@ -53,6 +53,25 @@ $deposit = $data["deposit"] ?? 0;
 $conditionStatus = $data["condition_status"] ?? "";
 $location = trim($data["location"] ?? "");
 $stock = $data["stock"] ?? null;
+
+// Parse photos / product_images dari JSON input
+$photosInput = $data["photos"] ?? $data["product_images"] ?? null;
+$productImages = null;
+if (is_array($photosInput)) {
+    $cleanPhotos = array_values(array_filter($photosInput, function($p) {
+        return is_string($p) && trim($p) !== "";
+    }));
+    if (!empty($cleanPhotos)) {
+        $productImages = json_encode($cleanPhotos, JSON_UNESCAPED_SLASHES);
+    }
+} elseif (is_string($photosInput) && trim($photosInput) !== "") {
+    $trimmed = trim($photosInput);
+    if (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']')) {
+        $productImages = $trimmed;
+    } else {
+        $productImages = json_encode([$trimmed], JSON_UNESCAPED_SLASHES);
+    }
+}
 
 if (!filter_var($categoryId, FILTER_VALIDATE_INT) || $categoryId <= 0) {
     http_response_code(400);
@@ -140,6 +159,7 @@ try {
             category_id,
             name,
             description,
+            product_images,
             price_per_day,
             deposit,
             condition_status,
@@ -150,6 +170,7 @@ try {
             :category_id,
             :name,
             :description,
+            :product_images,
             :price_per_day,
             :deposit,
             :condition_status,
@@ -163,6 +184,7 @@ try {
         "category_id" => $categoryId,
         "name" => $name,
         "description" => $description !== "" ? $description : null,
+        "product_images" => $productImages,
         "price_per_day" => $pricePerDay,
         "deposit" => $deposit,
         "condition_status" => $conditionStatus,
@@ -180,6 +202,9 @@ try {
             "owner_id" => (int) $authenticatedUserId,
             "category_id" => (int) $categoryId,
             "name" => $name,
+            "description" => $description,
+            "product_images" => $productImages,
+            "photos" => $productImages ? json_decode($productImages, true) : [],
             "price_per_day" => $pricePerDay,
             "deposit" => $deposit,
             "condition_status" => $conditionStatus,

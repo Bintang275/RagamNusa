@@ -112,6 +112,26 @@ $stock = filter_var(
 $condition = $input["condition_status"] ?? "good";
 $location = $input["location"] ?? null;
 
+// Parse photos / product_images jika dikirim
+$hasPhotosUpdate = array_key_exists("photos", $input) || array_key_exists("product_images", $input);
+$productImages = null;
+if ($hasPhotosUpdate) {
+    $photosInput = $input["photos"] ?? $input["product_images"] ?? null;
+    if (is_array($photosInput)) {
+        $cleanPhotos = array_values(array_filter($photosInput, function($p) {
+            return is_string($p) && trim($p) !== "";
+        }));
+        $productImages = !empty($cleanPhotos) ? json_encode($cleanPhotos, JSON_UNESCAPED_SLASHES) : null;
+    } elseif (is_string($photosInput) && trim($photosInput) !== "") {
+        $trimmed = trim($photosInput);
+        if (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']')) {
+            $productImages = $trimmed;
+        } else {
+            $productImages = json_encode([$trimmed], JSON_UNESCAPED_SLASHES);
+        }
+    }
+}
+
 if (
     $categoryId === false ||
     $categoryId <= 0 ||
@@ -207,42 +227,76 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare(
-        "UPDATE products
-         SET
-            category_id = :category_id,
-            name = :name,
-            description = :description,
-            price_per_day = :price,
-            deposit = :deposit,
-            stock = :stock,
-            condition_status = :condition_status,
-            location = :location
-         WHERE product_id = :product_id
-           AND owner_id = :owner_id"
-    );
+    if ($hasPhotosUpdate) {
+        $stmt = $pdo->prepare(
+            "UPDATE products
+             SET
+                category_id = :category_id,
+                name = :name,
+                description = :description,
+                product_images = :product_images,
+                price_per_day = :price,
+                deposit = :deposit,
+                stock = :stock,
+                condition_status = :condition_status,
+                location = :location
+             WHERE product_id = :product_id
+               AND owner_id = :owner_id"
+        );
 
-    $stmt->execute([
-        "category_id" => $categoryId,
-        "name" => $name,
-        "description" => $description,
-        "price" => $price,
-        "deposit" => $deposit,
-        "stock" => $stock,
-        "condition_status" => $condition,
-        "location" => $location,
-        "product_id" => $productId,
-        "owner_id" => $authenticatedUserId
-    ]);
+        $stmt->execute([
+            "category_id" => $categoryId,
+            "name" => $name,
+            "description" => $description,
+            "product_images" => $productImages,
+            "price" => $price,
+            "deposit" => $deposit,
+            "stock" => $stock,
+            "condition_status" => $condition,
+            "location" => $location,
+            "product_id" => $productId,
+            "owner_id" => $authenticatedUserId
+        ]);
+    } else {
+        $stmt = $pdo->prepare(
+            "UPDATE products
+             SET
+                category_id = :category_id,
+                name = :name,
+                description = :description,
+                price_per_day = :price,
+                deposit = :deposit,
+                stock = :stock,
+                condition_status = :condition_status,
+                location = :location
+             WHERE product_id = :product_id
+               AND owner_id = :owner_id"
+        );
+
+        $stmt->execute([
+            "category_id" => $categoryId,
+            "name" => $name,
+            "description" => $description,
+            "price" => $price,
+            "deposit" => $deposit,
+            "stock" => $stock,
+            "condition_status" => $condition,
+            "location" => $location,
+            "product_id" => $productId,
+            "owner_id" => $authenticatedUserId
+        ]);
+    }
 
     $stmt = $pdo->prepare(
         "SELECT
-            product_id, owner_id, category_id, name, description,
-            product_images, price_per_day, deposit, stock,
-            condition_status, location, status, create_at, update_at
-         FROM products
-         WHERE product_id = :product_id
-           AND owner_id = :owner_id
+            p.product_id, p.owner_id, p.category_id, p.name, p.description,
+            p.product_images, p.price_per_day, p.deposit, p.stock,
+            p.condition_status, p.location, p.status, p.create_at, p.update_at,
+            c.name AS category_name
+         FROM products p
+         LEFT JOIN categories c ON c.category_id = p.category_id
+         WHERE p.product_id = :product_id
+           AND p.owner_id = :owner_id
          LIMIT 1"
     );
 
@@ -251,7 +305,18 @@ try {
         "owner_id" => $authenticatedUserId
     ]);
 
-    $product = $stmt->fetch();
+    $product = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($product) {
+        $decoded = null;
+        if (!empty($product['product_images'])) {
+            $decoded = json_decode($product['product_images'], true);
+            if (!is_array($decoded)) {
+                $decoded = [$product['product_images']];
+            }
+        }
+        $product['photos'] = $decoded ?? [];
+    }
 
     echo json_encode([
         "success" => true,

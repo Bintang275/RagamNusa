@@ -1,4 +1,3 @@
-
 <?php
 
 header("Content-Type: application/json; charset=UTF-8");
@@ -39,19 +38,33 @@ try {
 
     $stmt = $pdo->prepare(
         "SELECT
-            product_id, owner_id, category_id, name, description,
-            product_images, price_per_day, deposit, stock,
-            condition_status, location, status, create_at, update_at
-         FROM products
-         WHERE owner_id = :owner_id
-         ORDER BY create_at DESC"
+            p.product_id, p.owner_id, p.category_id, p.name, p.description,
+            p.product_images, p.price_per_day, p.deposit, p.stock,
+            p.condition_status, p.location, p.status, p.create_at, p.update_at,
+            c.name AS category_name
+         FROM products p
+         LEFT JOIN categories c ON c.category_id = p.category_id
+         WHERE p.owner_id = :owner_id
+         ORDER BY p.create_at DESC"
     );
 
     $stmt->execute([
         "owner_id" => $authenticatedUserId
     ]);
 
-    $products = $stmt->fetchAll();
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($products as &$p) {
+        $decoded = null;
+        if (!empty($p['product_images'])) {
+            $decoded = json_decode($p['product_images'], true);
+            if (!is_array($decoded)) {
+                $decoded = [$p['product_images']];
+            }
+        }
+        $p['photos'] = $decoded ?? [];
+    }
+    unset($p);
 
     echo json_encode([
         "success" => true,
